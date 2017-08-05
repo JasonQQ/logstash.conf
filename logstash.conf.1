@@ -1,0 +1,35 @@
+input {
+	tcp {
+		port => 5000
+	}
+	file {
+		path => "/2017/*.txt"
+		start_position => "beginning"
+		sincedb_path => '/var/sincedb/2017'
+	}
+}
+
+## Add your filters / logstash plugins configuration here
+
+filter {
+  grok {
+    match => { "path" => "/2017/(?<date>\d{8})" }
+  }
+
+  mutate {
+    add_field => {"timestamp" => "%{date}" }
+  }
+  date {
+    match => [ "timestamp", "YYYYMMdd" ] 
+  }
+
+  if "_grokparsefailure" in [tags] {
+    drop {}
+  }
+}
+
+output {
+	elasticsearch {
+		hosts => "elasticsearch:9200"
+	}
+}
